@@ -12,7 +12,7 @@ struct Provider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ValueEntry) -> Void) {
-        let text = SharedState.load()?.currentValue ?? "First"
+        let text = SharedState.load()?.displayedValue() ?? "First"
         completion(ValueEntry(date: .now, text: text))
     }
 
@@ -21,7 +21,11 @@ struct Provider: TimelineProvider {
             completion(Timeline(entries: [ValueEntry(date: .now, text: "Open the app")], policy: .never))
             return
         }
-        let entries = [ValueEntry(date: .now, text: state.currentValue)]
+        let now = Date.now
+
+        // What to show right now. If the scheduled time already passed but the
+        // app hasn't run since, this is already the pending value, never the stale one.
+        let entries = [ValueEntry(date: now, text: state.displayedValue(at: now))]
 
         // Nothing changes until the app writes new state and calls
         // reloadAllTimelines().

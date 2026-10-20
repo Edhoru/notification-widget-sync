@@ -27,6 +27,17 @@ struct ContentView: View {
                     .contentTransition(.numericText())
             }
 
+            if let pending = valuesManager.state.pendingValue,
+               let fireDate = valuesManager.state.pendingFireDate {
+                Label {
+                    Text("\(pending) at \(fireDate.formatted(date: .omitted, time: .standard))")
+                } icon: {
+                    Image(systemName: "bell.badge")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
+
             Spacer()
 
             VStack(spacing: 12) {
@@ -37,15 +48,17 @@ struct ContentView: View {
 
                 Button("Remind me in \(Int(reminderDelay))s with \"\(valuesManager.nextValue)\"") {
                     let value = valuesManager.nextValue
-                    // One reminder at a time: scheduling finishes before the
-                    // button works again.
+                    // One reminder at a time: scheduling and arming finish
+                    // before the button works again.
                     isScheduling = true
                     Task {
                         defer { isScheduling = false }
                         // Ask first, then compute the time, so a slow answer to
                         // the permission prompt doesn't eat the delay.
                         guard await scheduler.requestAuthorization() else { return }
-                        _ = await scheduler.schedule(text: value, at: .now + reminderDelay)
+                        if let fireDate = await scheduler.schedule(text: value, at: .now + reminderDelay) {
+                            valuesManager.armReminder(value: value, fireDate: fireDate)
+                        }
                     }
                 }
                 .disabled(isScheduling)
@@ -54,6 +67,7 @@ struct ContentView: View {
             .controlSize(.large)
         }
         .padding()
+        .animation(.default, value: valuesManager.state)
     }
 }
 

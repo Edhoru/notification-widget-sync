@@ -7,8 +7,8 @@ import Foundation
 import Observation
 import WidgetKit
 
-/// Owns the value shown in the app and shares it with the widget through
-/// `SharedState`.
+/// Owns the value shown in the app and keeps it in sync with the scheduled
+/// notification and the widget through `SharedState`.
 ///
 /// Main-actor isolated (the target's default isolation), which also keeps
 /// `WidgetCenter` reloads on the main thread.
@@ -47,11 +47,27 @@ final class ValuesManager {
         save()
     }
 
-    /// Manual advance: next becomes current.
+    /// Manual advance: next becomes current. A pending reminder is untouched,
+    /// because its value is already frozen in the notification body.
     func shuffle() {
         state.currentValue = deck.removeFirst()
         refillIfNeeded()
         nextValue = deck[0]
+        save()
+    }
+
+    /// Records the value that was just baked into a scheduled notification.
+    /// Call it only after scheduling succeeded, so the app and widget never
+    /// advance for a reminder that was never scheduled.
+    func armReminder(value: String, fireDate: Date) {
+        state.pendingValue = value
+        state.pendingFireDate = fireDate
+        // Reserve the frozen value so it isn't handed out again as the next one.
+        if deck.first == value {
+            deck.removeFirst()
+            refillIfNeeded()
+            nextValue = deck[0]
+        }
         save()
     }
 
