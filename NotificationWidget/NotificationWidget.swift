@@ -25,10 +25,17 @@ struct Provider: TimelineProvider {
 
         // What to show right now. If the scheduled time already passed but the
         // app hasn't run since, this is already the pending value, never the stale one.
-        let entries = [ValueEntry(date: now, text: state.displayedValue(at: now))]
+        var entries = [ValueEntry(date: now, text: state.displayedValue(at: now))]
 
-        // Nothing changes until the app writes new state and calls
-        // reloadAllTimelines().
+        // A future-dated entry lets WidgetKit switch to the pending value at
+        // the scheduled time without the app running. iOS decides exactly
+        // when the widget redraws.
+        if let pending = state.pendingValue, let fireDate = state.pendingFireDate, fireDate > now {
+            entries.append(ValueEntry(date: fireDate, text: pending))
+        }
+
+        // Nothing changes after the last entry until the app writes new state
+        // and calls reloadAllTimelines().
         completion(Timeline(entries: entries, policy: .never))
     }
 }
