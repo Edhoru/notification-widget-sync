@@ -20,6 +20,8 @@ final class ValuesManager {
     ]
 
     private(set) var state: SharedState
+    /// The value a new reminder would carry: the head of the shuffled deck.
+    private(set) var nextValue: String
 
     /// Upcoming values in shuffled order, so nothing repeats until every value
     /// has been shown. App-only, so it lives in standard defaults.
@@ -41,13 +43,15 @@ final class ValuesManager {
         }
         state = restoredState
         deck = restoredDeck
+        nextValue = restoredDeck[0]
         save()
     }
 
-    /// Manual advance: the head of the deck becomes current.
+    /// Manual advance: next becomes current.
     func shuffle() {
         state.currentValue = deck.removeFirst()
         refillIfNeeded()
+        nextValue = deck[0]
         save()
     }
 
