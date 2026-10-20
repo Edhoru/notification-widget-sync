@@ -20,8 +20,12 @@ struct ReminderScheduler {
 
     /// Schedules `text` for `date` and returns the scheduled time, or nil if
     /// the date has already passed or the request was rejected.
+    ///
+    /// The trigger's date components stop at whole seconds, so the scheduled
+    /// time is truncated to match. Storing the untruncated date would leave the
+    /// saved time up to a second after the time the trigger was asked for.
     func schedule(text: String, at date: Date) async -> Date? {
-        let fireDate = date
+        let fireDate = Date(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.down))
         guard fireDate > .now else { return nil }
 
         let content = UNMutableNotificationContent()
