@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     let valuesManager: ValuesManager
 
     @State private var isScheduling = false
@@ -68,6 +69,10 @@ struct ContentView: View {
         }
         .padding()
         .animation(.default, value: valuesManager.state)
+        .task { valuesManager.reconcileIfNeeded() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { valuesManager.reconcileIfNeeded() }
+        }
     }
 }
 

@@ -71,6 +71,18 @@ final class ValuesManager {
         save()
     }
 
+    /// Commits the pending value once its scheduled time has passed, using the
+    /// same rule the widget renders with. This runs on launch, on every return
+    /// to the foreground and when a notification is presented in the
+    /// foreground, so it works whether the user tapped the notification,
+    /// dismissed it or never saw it.
+    func reconcileIfNeeded(now: Date = .now) {
+        let resolved = state.resolved(at: now)
+        guard resolved != state else { return }
+        state = resolved
+        save()
+    }
+
     /// Reshuffles a fresh round when the deck runs low, avoiding an immediate
     /// repeat across the shuffle boundary.
     private func refillIfNeeded() {
